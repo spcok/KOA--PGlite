@@ -84,9 +84,39 @@ export function useSyncEngine() {
           }
         }
 
-        // 6. Fetch Medical & Safety Records
-        const [medRes, mainRes, incRes, drillRes] = await Promise.all([
-            supabase.from('medical_records').select('*').neq('is_deleted', true),
+        // Fetch and Insert Medical Records
+        const { data: remoteMedical, error: medicalError } = await supabase
+          .from('medical_records')
+          .select('*')
+          .neq('is_deleted', true);
+          
+        if (medicalError) throw medicalError;
+
+        if (remoteMedical && remoteMedical.length > 0) {
+          console.log(`📦 [Sync] Writing ${remoteMedical.length} medical records to PGlite...`);
+          for (const m of remoteMedical) {
+            await localDB.query(
+              `INSERT INTO medical_records (id, animal_id, type, date, notes, created_at, is_deleted) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7) 
+               ON CONFLICT (id) DO UPDATE SET 
+                 type = EXCLUDED.type, 
+                 date = EXCLUDED.date, 
+                 notes = EXCLUDED.notes;`,
+              [
+                m.id, 
+                m.animal_id, 
+                m.record_type || m.type || 'Clinical Note', // Fallback mapping 
+                m.record_date || m.date || new Date().toISOString(), 
+                m.notes || '', 
+                m.created_at || new Date().toISOString(), 
+                m.is_deleted || false
+              ]
+            );
+          }
+        }
+
+        // 6. Fetch Maintenance & Safety Records
+        const [mainRes, incRes, drillRes] = await Promise.all([
             supabase.from('maintenance_logs').select('*').neq('is_deleted', true),
             supabase.from('incidents').select('*').neq('is_deleted', true),
             supabase.from('safety_drills').select('*').neq('is_deleted', true)
