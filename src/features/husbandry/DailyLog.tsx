@@ -123,9 +123,19 @@ export default function DailyLog() {
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
                             <th className="px-4 py-3 font-bold text-slate-600">Animal</th>
-                            <th className="px-4 py-3 font-bold text-slate-600 text-center">Weight</th>
-                            <th className="px-4 py-3 font-bold text-slate-600 text-center">Feed</th>
-                            <th className="px-4 py-3 font-bold text-slate-600 text-center">Temp/Env</th>
+                            {activeTab === AnimalCategory.EXOTICS ? (
+                              <>
+                                <th className="px-4 py-3 font-bold text-slate-600 text-center">Feed</th>
+                                <th className="px-4 py-3 font-bold text-slate-600 text-center">Mist</th>
+                                <th className="px-4 py-3 font-bold text-slate-600 text-center">Temp</th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="px-4 py-3 font-bold text-slate-600 text-center">Weight</th>
+                                <th className="px-4 py-3 font-bold text-slate-600 text-center">Feed</th>
+                                <th className="px-4 py-3 font-bold text-slate-600 text-center">Temp/Env</th>
+                              </>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

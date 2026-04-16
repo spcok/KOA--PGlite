@@ -12,12 +12,19 @@ export const useDailyLogData = (viewDate: string, activeTab: string) => {
 
   // THE FIX: Filter animals exactly like we did in the Dashboard to prevent UI row mismatches
   const safeAnimals = useMemo(() => {
-    if (activeTab === 'all' || !activeTab) return rawAnimals;
+    if (activeTab === 'all' || !activeTab) {
+      return rawAnimals.map((a: any) => ({ ...a, imageUrl: a.image_url || a.imageUrl }));
+    }
     const searchTarget = activeTab.toUpperCase().replace(/S$/, '');
-    return rawAnimals.filter((a: any) => {
-      if (!a.category) return false;
-      return a.category.toUpperCase().includes(searchTarget);
-    });
+    return rawAnimals
+      .filter((a: any) => {
+        if (!a.category) return false;
+        return a.category.toUpperCase().includes(searchTarget);
+      })
+      .map((a: any) => ({
+        ...a,
+        imageUrl: a.image_url || a.imageUrl // Bridges PGlite snake_case to UI camelCase
+      }));
   }, [rawAnimals, activeTab]);
 
   // 3. Mutation Placeholders (Prevents component crash when destructuring/saving)

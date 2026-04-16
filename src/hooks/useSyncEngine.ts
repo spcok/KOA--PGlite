@@ -67,6 +67,35 @@ export function useSyncEngine() {
           }
         }
 
+        // 5. Fetch Medical & Safety Records
+        const [medRes, mainRes, incRes, drillRes] = await Promise.all([
+            supabase.from('medical_records').select('*').neq('is_deleted', true),
+            supabase.from('maintenance_logs').select('*').neq('is_deleted', true),
+            supabase.from('incidents').select('*').neq('is_deleted', true),
+            supabase.from('safety_drills').select('*').neq('is_deleted', true)
+        ]);
+
+        if (medRes.data) {
+            for (const item of medRes.data) {
+                await localDB.query(`INSERT INTO medical_records (id, animal_id, type, date, notes, created_at, is_deleted) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING;`, [item.id, item.animal_id, item.type, item.date, item.notes, item.created_at, item.is_deleted || false]);
+            }
+        }
+        if (mainRes.data) {
+            for (const item of mainRes.data) {
+                await localDB.query(`INSERT INTO maintenance_logs (id, title, description, location, status, date_logged, created_at, is_deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (id) DO NOTHING;`, [item.id, item.title, item.description, item.location, item.status, item.date_logged, item.created_at, item.is_deleted || false]);
+            }
+        }
+        if (incRes.data) {
+            for (const item of incRes.data) {
+                await localDB.query(`INSERT INTO incidents (id, title, description, date, severity, status, created_at, is_deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (id) DO NOTHING;`, [item.id, item.title, item.description, item.date, item.severity, item.status, item.created_at, item.is_deleted || false]);
+            }
+        }
+        if (drillRes.data) {
+            for (const item of drillRes.data) {
+                await localDB.query(`INSERT INTO safety_drills (id, type, date, notes, created_at, is_deleted) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING;`, [item.id, item.type, item.date, item.notes, item.created_at, item.is_deleted || false]);
+            }
+        }
+
         // Insert Users
         if (remoteUsers && remoteUsers.length > 0) {
           for (const u of remoteUsers) {

@@ -1,14 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { animalsCollection } from '../../lib/database';
-import { Animal } from '../../types';
+import { useLiveQuery } from '@electric-sql/pglite-react';
 
-export function useAnimalProfileData(animalId: string | undefined) {
-  const { data: animals = [], isLoading } = useQuery<Animal[]>({
-    queryKey: ['animals'],
-    queryFn: () => animalsCollection.getOfflineData(),
-  });
+export const useAnimalProfileData = (animalId: string) => {
+  const res = useLiveQuery(`SELECT * FROM animals WHERE id = $1 LIMIT 1;`, [animalId]);
   
-  const animal = animals.find(a => a.id === animalId);
+  const animal = res?.rows[0] ? {
+    ...res.rows[0],
+    imageUrl: res.rows[0].image_url || res.rows[0].imageUrl // Bridge snake_case to camelCase
+  } : null;
 
-  return { animal, isLoading };
-}
+  return {
+    animal,
+    isLoading: res === undefined,
+    error: res?.error || null,
+  };
+};
