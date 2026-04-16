@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { animalsCollection, dailyLogsCollection, medicalLogsCollection } from '../../lib/database';
+import { animalsCollection, dailyLogsCollection, medicalRecordsCollection } from '../../lib/database';
 import { supabase } from '../../lib/supabase';
 import { LogType, Animal, ClinicalNote, DailyLog } from '../../types';
 import { mapToCamelCase } from '../../lib/dataMapping';
@@ -81,19 +81,19 @@ export function useMissingRecordsData() {
     queryKey: ['medicalLogs'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase.from('medical_logs').select('*');
+        const { data, error } = await supabase.from('medical_records').select('*');
         if (error) throw error;
         const mappedData = mapToCamelCase<ClinicalNote>(data as Record<string, unknown>[]) as ClinicalNote[];
         // Refresh local vault (Upsert Pattern)
         setTimeout(async () => {
           for (const item of mappedData) {
-            await medicalLogsCollection.sync(item);
+            await medicalRecordsCollection.sync(item);
           }
         }, 0);
         return mappedData;
       } catch {
         console.warn("Network unreachable. Serving medical logs from local vault.");
-        return await medicalLogsCollection.getOfflineData();
+        return await medicalRecordsCollection.getOfflineData();
       }
     }
   });
