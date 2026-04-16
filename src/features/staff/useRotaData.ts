@@ -1,4 +1,4 @@
-import { useLiveQuery } from '@tanstack/react-db';
+import { useLiveQuery } from '@electric-sql/pglite-react';
 import { rotaCollection } from '../../lib/database';
 import { RotaShift } from '../../types';
 
@@ -11,6 +11,7 @@ export const useRotaData = (dateRange?: { start: Date; end: Date }) => {
     isLoading: res === undefined,
     error: res?.error || null,
     
+    // Mutation functions preserved (as per previous phase implementation)
     addShift: async (shift: Partial<RotaShift>) => {
       await rotaCollection.insert({ ...shift, id: shift.id || crypto.randomUUID(), isDeleted: false } as RotaShift);
     },

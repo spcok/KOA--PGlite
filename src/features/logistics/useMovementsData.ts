@@ -1,4 +1,4 @@
-import { useLiveQuery } from '@tanstack/react-db';
+import { useLiveQuery } from '@electric-sql/pglite-react';
 import { movementsCollection } from '../../lib/database';
 
 export const useMovementsData = () => {

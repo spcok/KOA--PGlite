@@ -19,6 +19,16 @@ export const initLocalSchema = async () => {
       CREATE TABLE IF NOT EXISTS incidents (id UUID PRIMARY KEY, title TEXT, description TEXT, date TEXT, severity TEXT, status TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
       CREATE TABLE IF NOT EXISTS safety_drills (id UUID PRIMARY KEY, type TEXT, date TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
       CREATE TABLE IF NOT EXISTS tasks (recurring BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ, id UUID NOT NULL, updated_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE, type TEXT, _modified TIMESTAMPTZ, due_date TEXT NOT NULL, notes TEXT, title TEXT NOT NULL, completed BOOLEAN DEFAULT FALSE, animal_id UUID, assigned_to TEXT, PRIMARY KEY (id));
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Pending';
+      
+      -- Staff Module Tables
+      CREATE TABLE IF NOT EXISTS timesheets (id UUID PRIMARY KEY, user_id UUID, date TEXT, clock_in TEXT, clock_out TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS staff_rota (id UUID PRIMARY KEY, user_id UUID, start_time TEXT, end_time TEXT, role TEXT, location TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS holidays (id UUID PRIMARY KEY, user_id UUID, start_date TEXT, end_date TEXT, status TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Logistics Module Tables
+      CREATE TABLE IF NOT EXISTS animal_movements (id UUID PRIMARY KEY, animal_id UUID, from_location TEXT, to_location TEXT, date TEXT, reason TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS animal_transfers (id UUID PRIMARY KEY, animal_id UUID, to_institution TEXT, date TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
       
       -- Auth Bedrock
       CREATE TABLE IF NOT EXISTS organisations (updated_at TIMESTAMPTZ, logo_url TEXT, org_name TEXT NOT NULL, id TEXT NOT NULL, adoption_portal TEXT, contact_phone TEXT, address TEXT, zla_license_number TEXT, official_website TEXT, contact_email TEXT, created_at TIMESTAMPTZ, PRIMARY KEY (id));

@@ -1,4 +1,5 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
+import { useMemo } from 'react';
 import { maintenanceCollection } from '../../lib/database';
 import { MaintenanceLog } from '../../types';
 

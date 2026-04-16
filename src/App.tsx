@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { PGliteProvider } from '@electric-sql/pglite-react';
 import { localDB } from './lib/pglite';
 import { useSyncEngine } from './hooks/useSyncEngine';
@@ -9,6 +9,10 @@ import { useAuthStore } from './store/authStore';
 import { router } from './router';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useSupabaseRealtime } from './hooks/useSupabaseRealtime';
+
+function Loader() {
+  return <div className="p-8 text-center text-slate-500">Loading...</div>;
+}
 
 // 1. THE OS EVICTION LOCK
 function useStoragePersistence() {
@@ -60,7 +64,9 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <PGliteProvider db={localDB}>
           <GlobalHooks />
-          <RouterProvider router={router} context={{ auth: authContext }} />
+          <Suspense fallback={<Loader />}>
+            <RouterProvider router={router} context={{ auth: authContext }} />
+          </Suspense>
         </PGliteProvider>
       </QueryClientProvider>
     </ErrorBoundary>
