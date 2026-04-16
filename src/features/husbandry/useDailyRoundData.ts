@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { AnimalCategory, DailyRound, LogType } from '../../types';
-import { useLiveQuery } from '@tanstack/react-db';
+import { useLiveQuery } from '@electric-sql/pglite-react';
 import { animalsCollection, dailyLogsCollection, dailyRoundsCollection } from '../../lib/database';
 
 interface AnimalCheckState {

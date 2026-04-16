@@ -41,11 +41,28 @@ export function useSyncEngine() {
         if (remoteAnimals && remoteAnimals.length > 0) {
           for (const a of remoteAnimals) {
             await localDB.query(
-              `INSERT INTO animals (id, name, species, category, location, is_deleted, created_at, updated_at) 
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+              `INSERT INTO animals (id, name, species, category, location, is_deleted, created_at, updated_at, image_url) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
                ON CONFLICT (id) DO UPDATE SET 
-                 name = EXCLUDED.name, species = EXCLUDED.species, category = EXCLUDED.category, location = EXCLUDED.location, updated_at = EXCLUDED.updated_at;`,
-              [a.id, a.name || 'Unknown', a.species || 'Unknown', a.category || 'General', a.location || 'Unknown', a.is_deleted || false, a.created_at || new Date().toISOString(), a.updated_at || new Date().toISOString()]
+                 name = EXCLUDED.name, species = EXCLUDED.species, category = EXCLUDED.category, location = EXCLUDED.location, updated_at = EXCLUDED.updated_at, image_url = EXCLUDED.image_url;`,
+              [a.id, a.name || 'Unknown', a.species || 'Unknown', a.category || 'General', a.location || 'Unknown', a.is_deleted || false, a.created_at || new Date().toISOString(), a.updated_at || new Date().toISOString(), a.image_url || null]
+            );
+          }
+        }
+
+        // 4. Fetch Daily Rounds
+        const { data: remoteRounds, error: roundError } = await supabase.from('daily_rounds').select('*').neq('is_deleted', true);
+        if (roundError) console.error('Error fetching rounds:', roundError);
+        
+        // Insert Rounds
+        if (remoteRounds && remoteRounds.length > 0) {
+          for (const r of remoteRounds) {
+            await localDB.query(
+              `INSERT INTO daily_rounds (id, date, created_at, updated_at, notes, user_initials, is_deleted) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7) 
+               ON CONFLICT (id) DO UPDATE SET 
+                  date = EXCLUDED.date, notes = EXCLUDED.notes, user_initials = EXCLUDED.user_initials, updated_at = EXCLUDED.updated_at;`,
+              [r.id, r.date, r.created_at, r.updated_at, r.notes, r.user_initials, r.is_deleted || false]
             );
           }
         }
