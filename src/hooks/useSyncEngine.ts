@@ -67,7 +67,24 @@ export function useSyncEngine() {
           }
         }
 
-        // 5. Fetch Medical & Safety Records
+        // 5. Fetch Daily Logs
+        const { data: remoteLogs, error: logError } = await supabase.from('daily_logs').select('*').neq('is_deleted', true);
+        if (logError) console.error('Error fetching logs:', logError);
+        
+        // Insert Logs
+        if (remoteLogs && remoteLogs.length > 0) {
+          for (const l of remoteLogs) {
+            await localDB.query(
+                `INSERT INTO daily_logs (id, animal_id, log_type, log_date, value, notes, user_initials, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                 ON CONFLICT (id) DO UPDATE SET
+                  animal_id = EXCLUDED.animal_id, log_type = EXCLUDED.log_type, log_date = EXCLUDED.log_date, value = EXCLUDED.value, notes = EXCLUDED.notes, user_initials = EXCLUDED.user_initials;`,
+                [l.id, l.animal_id, l.log_type, l.log_date, l.value, l.notes, l.user_initials, l.created_at]
+            );
+          }
+        }
+
+        // 6. Fetch Medical & Safety Records
         const [medRes, mainRes, incRes, drillRes] = await Promise.all([
             supabase.from('medical_records').select('*').neq('is_deleted', true),
             supabase.from('maintenance_logs').select('*').neq('is_deleted', true),

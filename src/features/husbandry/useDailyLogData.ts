@@ -1,46 +1,47 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
 import { useMemo } from 'react';
 
-export const useDailyLogData = (viewDate: string, activeTab: string) => {
-  // 1. Fetch BOTH tables required by the DailyLog UI
+// Support optional animalId for the Animal Profile view
+export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?: string) => {
+  // 1. Fetching logic
   const animalsRes = useLiveQuery(`SELECT * FROM animals WHERE is_deleted = false ORDER BY name ASC;`);
-  const logsRes = useLiveQuery(`SELECT * FROM daily_logs ORDER BY created_at DESC;`);
+  
+  // If animalId is provided (Animal Profile), filter by it. Otherwise, get all for the dashboard.
+  const logsQuery = animalId 
+    ? `SELECT * FROM daily_logs WHERE animal_id = $1 AND is_deleted = false ORDER BY log_date DESC;`
+    : `SELECT * FROM daily_logs WHERE is_deleted = false ORDER BY created_at DESC;`;
+  const logsParams = animalId ? [animalId] : [];
+  const logsRes = useLiveQuery(logsQuery, logsParams);
 
   const isEngineLoading = animalsRes === undefined || logsRes === undefined;
-  const rawAnimals = animalsRes?.rows || [];
-  const safeLogs = logsRes?.rows || [];
+  
+  // 2. The Bridge: Map snake_case (DB) to camelCase (UI)
+  const dailyLogs = useMemo(() => {
+    return (logsRes?.rows || []).map((log: any) => ({
+      ...log,
+      animalId: log.animal_id,
+      logType: log.log_type,
+      logDate: log.log_date,
+      userInitials: log.user_initials
+    }));
+  }, [logsRes?.rows]);
 
-  // THE FIX: Filter animals exactly like we did in the Dashboard to prevent UI row mismatches
-  const safeAnimals = useMemo(() => {
-    if (activeTab === 'all' || !activeTab) {
-      return rawAnimals.map((a: any) => ({ ...a, imageUrl: a.image_url || a.imageUrl }));
+  const animals = useMemo(() => {
+    const raw = animalsRes?.rows || [];
+    if (!activeTab || activeTab === 'all') {
+      return raw.map((a: any) => ({ ...a, imageUrl: a.image_url }));
     }
     const searchTarget = activeTab.toUpperCase().replace(/S$/, '');
-    return rawAnimals
-      .filter((a: any) => {
-        if (!a.category) return false;
-        return a.category.toUpperCase().includes(searchTarget);
-      })
-      .map((a: any) => ({
-        ...a,
-        imageUrl: a.image_url || a.imageUrl // Bridges PGlite snake_case to UI camelCase
-      }));
-  }, [rawAnimals, activeTab]);
+    return raw
+      .filter((a: any) => a.category?.toUpperCase().includes(searchTarget))
+      .map((a: any) => ({ ...a, imageUrl: a.image_url }));
+  }, [animalsRes?.rows, activeTab]);
 
-  // 3. Mutation Placeholders (Prevents component crash when destructuring/saving)
-  const addLogEntry = async (entry: any) => { 
-    console.warn('Mutation Pending:', entry); 
-  };
-  const updateLogEntry = async (id: string, entry: any) => { 
-    console.warn('Mutation Pending:', id, entry); 
-  };
-
-  // 4. Return EXACTLY what DailyLog.tsx is asking for
   return {
-    animals: safeAnimals,
-    dailyLogs: safeLogs,
+    animals,
+    dailyLogs,
     isLoading: isEngineLoading,
-    addLogEntry,
-    updateLogEntry
+    addLogEntry: async () => {}, // Placeholders
+    updateLogEntry: async () => {}
   };
 };

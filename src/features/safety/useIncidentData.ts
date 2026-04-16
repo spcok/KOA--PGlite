@@ -1,22 +1,18 @@
-import { useLiveQuery } from '@tanstack/react-db';
+import { useLiveQuery } from '@electric-sql/pglite-react';
 import { incidentsCollection } from '../../lib/database';
 import { Incident } from '../../types';
 
 export const useIncidentData = () => {
-  const { data, isLoading } = useLiveQuery((q) => 
-    q.from({ item: incidentsCollection })
-  );
+  const res = useLiveQuery(`SELECT * FROM incidents WHERE is_deleted = false ORDER BY date DESC;`);
 
-  const safeData = Array.isArray(data) ? data : [];
-  const activeIncidents = safeData.filter((i: Incident) => i && !i.isDeleted);
+  const incidents = res?.rows || [];
 
   return {
-    // Aliases
-    incidents: activeIncidents,
-    logs: activeIncidents,
-    data: activeIncidents,
-    
-    isLoading,
+    data: incidents,
+    incidents,
+    logs: incidents,
+    isLoading: res === undefined,
+    error: res?.error || null,
     addIncident: async (incident: Partial<Incident>) => {
       await incidentsCollection.insert({ ...incident, id: incident.id || crypto.randomUUID(), isDeleted: false } as Incident);
     },

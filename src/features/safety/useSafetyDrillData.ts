@@ -1,23 +1,19 @@
-import { useLiveQuery } from '@tanstack/react-db';
+import { useLiveQuery } from '@electric-sql/pglite-react';
 import { safetyDrillsCollection } from '../../lib/database';
 import { SafetyDrill } from '../../types';
 
 export const useSafetyDrillData = () => {
-  const { data, isLoading } = useLiveQuery((q) => 
-    q.from({ item: safetyDrillsCollection })
-  );
-
-  const safeData = Array.isArray(data) ? data : [];
-  const activeDrills = safeData.filter((d: SafetyDrill) => d && !d.isDeleted);
+  const res = useLiveQuery(`SELECT * FROM safety_drills WHERE is_deleted = false ORDER BY date DESC;`);
+  
+  const drills = res?.rows || [];
 
   return {
-    // Aliases
-    drills: activeDrills,
-    safetyDrills: activeDrills,
-    logs: activeDrills,
-    data: activeDrills,
-    
-    isLoading,
+    data: drills,
+    drills,
+    safetyDrills: drills,
+    logs: drills,
+    isLoading: res === undefined,
+    error: res?.error || null,
     addDrill: async (drill: Partial<SafetyDrill>) => {
       await safetyDrillsCollection.insert({ ...drill, id: drill.id || crypto.randomUUID(), isDeleted: false } as SafetyDrill);
     },

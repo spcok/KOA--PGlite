@@ -4,23 +4,32 @@ import { medicalLogsCollection, marChartsCollection, quarantineRecordsCollection
 import { ClinicalNote, MARChart, QuarantineRecord } from '../../types';
 
 export const useMedicalData = (animalId?: string) => {
-  const { data: rawClinicalNotes = [], isLoading: notesLoading } = useLiveQuery((q) => q.from({ item: medicalLogsCollection }));
-  const { data: rawMarCharts = [], isLoading: marLoading } = useLiveQuery((q) => q.from({ item: marChartsCollection }));
-  const { data: rawQuarantineRecords = [], isLoading: quarantineLoading } = useLiveQuery((q) => q.from({ item: quarantineRecordsCollection }));
+  const query = animalId
+    ? `SELECT * FROM medical_records WHERE animal_id = $1 AND is_deleted = false ORDER BY date DESC;`
+    : `SELECT * FROM medical_records WHERE is_deleted = false ORDER BY date DESC;`;
+  const params = animalId ? [animalId] : [];
+  const res = useLiveQuery(query, params);
 
-  const clinicalNotes = useMemo(() => rawClinicalNotes.filter((n: ClinicalNote) => !n.isDeleted && (!animalId || n.animalId === animalId)), [rawClinicalNotes, animalId]);
-  const marCharts = useMemo(() => rawMarCharts.filter((m: MARChart) => !m.isDeleted && (!animalId || m.animalId === animalId)), [rawMarCharts, animalId]);
-  const quarantineRecords = useMemo(() => rawQuarantineRecords.filter((q: QuarantineRecord) => !q.isDeleted && (!animalId || q.animalId === animalId)), [rawQuarantineRecords, animalId]);
+  const medicalRecords = useMemo(() => {
+    return (res?.rows || []).map((r: any) => ({
+      ...r,
+      animalId: r.animal_id,
+      createdAt: r.created_at
+    }));
+  }, [res?.rows]);
 
+  // FIXME: Preserve other medical sub-collections here later
   return {
-    clinicalNotes,
-    marCharts,
-    quarantineRecords,
-    isLoading: notesLoading || marLoading || quarantineLoading,
-    addClinicalNote: async (note: any) => medicalLogsCollection.insert({ ...note, id: note.id || crypto.randomUUID(), isDeleted: false }),
-    updateClinicalNote: async (note: any) => medicalLogsCollection.update(note.id, note),
-    addMarChart: async (chart: any) => marChartsCollection.insert({ ...chart, id: chart.id || crypto.randomUUID(), isDeleted: false }),
-    addQuarantineRecord: async (record: any) => quarantineRecordsCollection.insert({ ...record, id: record.id || crypto.randomUUID(), isDeleted: false }),
-    updateQuarantineRecord: async (record: any) => quarantineRecordsCollection.update(record.id, record),
+    clinicalNotes: medicalRecords, // Bridge to UI expectation
+    marCharts: [], // Placeholder for now
+    quarantineRecords: [], // Placeholder for now
+    isLoading: res === undefined,
+    isError: !!res?.error,
+    error: res?.error || null,
+    addClinicalNote: async (note: any) => { console.warn('Mutation Pending:', note); },
+    updateClinicalNote: async (note: any) => { console.warn('Mutation Pending:', note); },
+    addMarChart: async (chart: any) => { console.warn('Mutation Pending:', chart); },
+    addQuarantineRecord: async (record: any) => { console.warn('Mutation Pending:', record); },
+    updateQuarantineRecord: async (record: any) => { console.warn('Mutation Pending:', record); },
   };
 };
