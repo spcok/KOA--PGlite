@@ -2,13 +2,21 @@ import { useLiveQuery } from '@tanstack/react-db';
 import { transfersCollection } from '../../lib/database';
 
 export const useTransfersData = () => {
-  const { data: transfers = [], isLoading } = useLiveQuery((q) => q.from({ item: transfersCollection }));
+  const res = useLiveQuery(`SELECT * FROM animal_transfers WHERE is_deleted = false ORDER BY date DESC;`);
 
   return {
-    transfers: transfers.filter((t: any) => !t.isDeleted),
-    isLoading,
-    addTransfer: async (transfer: any) => transfersCollection.insert({ ...transfer, id: crypto.randomUUID(), isDeleted: false }),
-    updateTransfer: async (transfer: any) => transfersCollection.update(transfer.id, transfer),
-    deleteTransfer: async (id: string) => transfersCollection.delete(id),
+    data: res?.rows || [],
+    transfers: res?.rows || [],
+    isLoading: res === undefined,
+    error: res?.error || null,
+    addTransfer: async (transfer: any) => {
+      await transfersCollection.insert({ ...transfer, id: transfer.id || crypto.randomUUID(), isDeleted: false });
+    },
+    updateTransfer: async (transfer: any) => {
+      await transfersCollection.update(transfer.id, transfer);
+    },
+    deleteTransfer: async (id: string) => {
+      await transfersCollection.delete(id);
+    }
   };
 };

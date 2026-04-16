@@ -3,25 +3,19 @@ import { timesheetsCollection } from '../../lib/database';
 import { Timesheet } from '../../types';
 
 export const useTimesheetData = (staffName?: string) => {
-  const { data, isLoading } = useLiveQuery((q) => 
-    q.from({ item: timesheetsCollection })
-  );
-
-  const safeData = Array.isArray(data) ? data : [];
-  
-  const activeTimesheets = safeData.filter((t: Timesheet) => {
-    if (!t || t.isDeleted) return false;
-    if (staffName && t.staffName !== staffName) return false;
-    return true;
-  });
+  const query = staffName 
+    ? `SELECT * FROM timesheets WHERE staff_name = $1 AND is_deleted = false ORDER BY date DESC;`
+    : `SELECT * FROM timesheets WHERE is_deleted = false ORDER BY date DESC;`;
+  const params = staffName ? [staffName] : [];
+  const res = useLiveQuery(query, params);
 
   return {
-    // Aliases to prevent destructuring crashes
-    timesheets: activeTimesheets,
-    logs: activeTimesheets,
-    data: activeTimesheets,
+    data: res?.rows || [],
+    timesheets: res?.rows || [],
+    logs: res?.rows || [],
+    isLoading: res === undefined,
+    error: res?.error || null,
     
-    isLoading,
     addTimesheet: async (entry: Partial<Timesheet>) => {
       await timesheetsCollection.insert({ ...entry, id: entry.id || crypto.randomUUID(), isDeleted: false } as Timesheet);
     },

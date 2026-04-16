@@ -3,20 +3,15 @@ import { holidaysCollection } from '../../lib/database';
 import { Holiday } from '../../types';
 
 export const useHolidayData = () => {
-  const { data, isLoading } = useLiveQuery((q) => 
-    q.from({ item: holidaysCollection })
-  );
-
-  const safeData = Array.isArray(data) ? data : [];
-  const activeHolidays = safeData.filter((h: Holiday) => h && !h.isDeleted);
-
+  const res = useLiveQuery(`SELECT * FROM holidays WHERE is_deleted = false ORDER BY start_date ASC;`);
+  
   return {
-    // Aliases
-    holidays: activeHolidays,
-    requests: activeHolidays,
-    data: activeHolidays,
-
-    isLoading,
+    data: res?.rows || [],
+    holidays: res?.rows || [],
+    requests: res?.rows || [], // Preserving alias
+    isLoading: res === undefined,
+    error: res?.error || null,
+    
     addHoliday: async (holiday: Partial<Holiday>) => {
       await holidaysCollection.insert({ ...holiday, id: holiday.id || crypto.randomUUID(), isDeleted: false } as Holiday);
     },
