@@ -1,5 +1,6 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
 import { useMemo } from 'react';
+import { localDB } from '../../lib/pglite';
 
 export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?: string) => {
   // 1. Animals Query
@@ -43,11 +44,59 @@ export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?
       .map((a: any) => ({ ...a, imageUrl: a.image_url }));
   }, [animalsRes?.rows, activeTab]);
 
+  // 4. Reactive Mutations (Offline Writes)
+  const addLogEntry = async (entry: any) => {
+    try {
+      const id = entry.id || crypto.randomUUID();
+      const now = new Date().toISOString();
+      
+      await localDB.query(
+        `INSERT INTO daily_logs 
+        (id, animal_id, log_type, log_date, value, notes, user_initials, created_at, updated_at, is_deleted) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false);`,
+        [
+          id,
+          entry.animalId,
+          entry.logType,
+          entry.logDate || now,
+          entry.value || null,
+          entry.notes || null,
+          entry.userInitials || 'UNK',
+          now,
+          now
+        ]
+      );
+      console.log('✅ [PGlite] Local insert successful:', id);
+    } catch (error) {
+      console.error('❌ [PGlite] Insert failed:', error);
+      throw error;
+    }
+  };
+
+  const updateLogEntry = async (id: string, entry: any) => {
+    try {
+      const now = new Date().toISOString();
+      await localDB.query(
+        `UPDATE daily_logs SET 
+          log_type = COALESCE($1, log_type),
+          value = COALESCE($2, value),
+          notes = COALESCE($3, notes),
+          updated_at = $4
+        WHERE id = $5;`,
+        [entry.logType, entry.value, entry.notes, now, id]
+      );
+      console.log('✅ [PGlite] Local update successful:', id);
+    } catch (error) {
+      console.error('❌ [PGlite] Update failed:', error);
+      throw error;
+    }
+  };
+
   return {
     animals,
     dailyLogs,
     isLoading: isEngineLoading,
-    addLogEntry: async () => {}, // Placeholders
-    updateLogEntry: async () => {}
+    addLogEntry,
+    updateLogEntry
   };
 };
