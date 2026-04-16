@@ -1,21 +1,27 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
 import { useMemo } from 'react';
 
-// Support optional animalId for the Animal Profile view
 export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?: string) => {
-  // 1. Fetching logic
+  // 1. Animals Query
   const animalsRes = useLiveQuery(`SELECT * FROM animals WHERE is_deleted = false ORDER BY name ASC;`);
   
-  // If animalId is provided (Animal Profile), filter by it. Otherwise, get all for the dashboard.
-  const logsQuery = animalId 
-    ? `SELECT * FROM daily_logs WHERE animal_id = $1 AND is_deleted = false ORDER BY log_date DESC;`
-    : `SELECT * FROM daily_logs WHERE is_deleted = false ORDER BY created_at DESC;`;
-  const logsParams = animalId ? [animalId] : [];
-  const logsRes = useLiveQuery(logsQuery, logsParams);
+  // 2. Dynamic Logs Query (Handles both Profile and Dashboard views)
+  let logsQuery = `SELECT * FROM daily_logs WHERE is_deleted = false ORDER BY created_at DESC;`;
+  let logsParams: any[] = [];
 
+  if (animalId) {
+    logsQuery = `SELECT * FROM daily_logs WHERE animal_id = $1 AND is_deleted = false ORDER BY log_date DESC;`;
+    logsParams = [animalId];
+  } else if (viewDate) {
+    // THIS FIXES THE STATIC DATE BUG
+    logsQuery = `SELECT * FROM daily_logs WHERE log_date = $1 AND is_deleted = false ORDER BY created_at DESC;`;
+    logsParams = [viewDate];
+  }
+
+  const logsRes = useLiveQuery(logsQuery, logsParams);
   const isEngineLoading = animalsRes === undefined || logsRes === undefined;
   
-  // 2. The Bridge: Map snake_case (DB) to camelCase (UI)
+  // 3. Snake_Case Bridge
   const dailyLogs = useMemo(() => {
     return (logsRes?.rows || []).map((log: any) => ({
       ...log,
@@ -33,7 +39,7 @@ export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?
     }
     const searchTarget = activeTab.toUpperCase().replace(/S$/, '');
     return raw
-      .filter((a: any) => a.category?.toUpperCase().includes(searchTarget))
+      .filter((a: any) => a.category && a.category.toUpperCase().includes(searchTarget))
       .map((a: any) => ({ ...a, imageUrl: a.image_url }));
   }, [animalsRes?.rows, activeTab]);
 
