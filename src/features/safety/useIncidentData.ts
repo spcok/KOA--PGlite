@@ -19,7 +19,7 @@ export const useIncidentData = () => {
         return await updateOfflineRecord('incidents', id, updates);
     },
     deleteIncident: async (id: string) => {
-      await incidentsCollection.delete(id);
+        return await updateOfflineRecord('incidents', id, { is_deleted: true });
     }
   };
 };

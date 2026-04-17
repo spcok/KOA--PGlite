@@ -10,33 +10,48 @@ export const initLocalSchema = async () => {
     console.log('🐘 [Database] Initializing PGlite Schema...');
     await localDB.exec(`
       BEGIN;
-      -- Core Husbandry
-      CREATE TABLE IF NOT EXISTS animals (has_no_id BOOLEAN DEFAULT FALSE, critical_husbandry_notes JSONB, target_day_temp_c TEXT, target_night_temp_c TEXT, location TEXT NOT NULL, category TEXT NOT NULL, latin_name TEXT, species TEXT NOT NULL, name TEXT NOT NULL, entity_type TEXT, weight_unit TEXT, hazard_rating TEXT, image_url TEXT, sex TEXT, acquisition_type TEXT, microchip_id TEXT, disposition_status TEXT, origin_location TEXT, destination_location TEXT, ring_number TEXT, red_list_status TEXT, description TEXT, special_requirements TEXT, misting_frequency TEXT, origin TEXT, distribution_map_url TEXT, archive_reason TEXT, is_boarding BOOLEAN DEFAULT FALSE, ambient_temp_only BOOLEAN DEFAULT FALSE, is_deleted BOOLEAN DEFAULT FALSE NOT NULL, _modified TIMESTAMPTZ, updated_at TIMESTAMPTZ, created_at TIMESTAMPTZ, water_tipping_temp TEXT, is_quarantine BOOLEAN DEFAULT FALSE, archived_at TIMESTAMPTZ, archived BOOLEAN DEFAULT FALSE, display_order INTEGER, winter_weight_g TEXT, flying_weight_g TEXT, dam_id UUID, sire_id UUID, acquisition_date DATE, archive_type TEXT, target_humidity_max_percent TEXT, target_humidity_min_percent TEXT, id UUID NOT NULL, parent_mob_id UUID, census_count INTEGER, is_venomous BOOLEAN DEFAULT FALSE, dob DATE, is_dob_unknown BOOLEAN DEFAULT FALSE, transfer_date DATE, PRIMARY KEY (id));
-      CREATE TABLE IF NOT EXISTS daily_logs (weight_unit TEXT, _modified TIMESTAMPTZ, basking_temp_c TEXT, user_initials TEXT, notes TEXT, value TEXT NOT NULL, log_date TEXT NOT NULL, log_type TEXT NOT NULL, cool_temp_c TEXT, temperature_c TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE, updated_at TIMESTAMPTZ, id UUID NOT NULL, integrity_seal TEXT, created_by TEXT, animal_id UUID NOT NULL, weight_grams TEXT, weight TEXT, health_record_type TEXT, PRIMARY KEY (id));
-      CREATE TABLE IF NOT EXISTS daily_rounds (id UUID PRIMARY KEY, date TEXT NOT NULL, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, notes TEXT, user_initials TEXT, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS medical_records (id UUID PRIMARY KEY, animal_id UUID NOT NULL, type TEXT, date TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS maintenance_logs (id UUID PRIMARY KEY, title TEXT, description TEXT, location TEXT, status TEXT, date_logged TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS incidents (id UUID PRIMARY KEY, title TEXT, description TEXT, date TEXT, severity TEXT, status TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS safety_drills (id UUID PRIMARY KEY, type TEXT, date TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS tasks (recurring BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ, id UUID NOT NULL, updated_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE, type TEXT, _modified TIMESTAMPTZ, due_date TEXT NOT NULL, notes TEXT, title TEXT NOT NULL, completed BOOLEAN DEFAULT FALSE, animal_id UUID, assigned_to TEXT, PRIMARY KEY (id));
-      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Pending';
-      
-      -- Staff Module Tables
-      CREATE TABLE IF NOT EXISTS timesheets (id UUID PRIMARY KEY, user_id UUID, date TEXT, clock_in TEXT, clock_out TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS staff_rota (id UUID PRIMARY KEY, user_id UUID, start_time TEXT, end_time TEXT, role TEXT, location TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS holidays (id UUID PRIMARY KEY, user_id UUID, start_date TEXT, end_date TEXT, status TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      -- Core & Admin
+      CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, role TEXT, initials TEXT NOT NULL, pin TEXT, job_position TEXT, signature_data TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS operational_lists (id UUID PRIMARY KEY, category TEXT, type TEXT, value TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS directory_contacts (id UUID PRIMARY KEY, name TEXT, role TEXT, organization TEXT, phone TEXT, email TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS organisations (id TEXT PRIMARY KEY, org_name TEXT, address TEXT, contact_email TEXT, contact_phone TEXT, zla_license_number TEXT, logo_url TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS role_permissions (id UUID PRIMARY KEY, role TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS zla_documents (id UUID PRIMARY KEY, category TEXT NOT NULL, name TEXT NOT NULL, file_url TEXT, upload_date TIMESTAMPTZ, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS bug_reports (id UUID PRIMARY KEY, user_name TEXT, role TEXT, message TEXT, url TEXT, is_online BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
 
-      -- Logistics Module Tables
-      CREATE TABLE IF NOT EXISTS animal_movements (id UUID PRIMARY KEY, animal_id UUID, from_location TEXT, to_location TEXT, date TEXT, reason TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      CREATE TABLE IF NOT EXISTS animal_transfers (id UUID PRIMARY KEY, animal_id UUID, to_institution TEXT, date TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
-      
-      -- Auth Bedrock
-      CREATE TABLE IF NOT EXISTS organisations (updated_at TIMESTAMPTZ, logo_url TEXT, org_name TEXT NOT NULL, id TEXT NOT NULL, adoption_portal TEXT, contact_phone TEXT, address TEXT, zla_license_number TEXT, official_website TEXT, contact_email TEXT, created_at TIMESTAMPTZ, PRIMARY KEY (id));
-      CREATE TABLE IF NOT EXISTS role_permissions (manage_all_timesheets BOOLEAN DEFAULT FALSE, _modified TIMESTAMPTZ, updated_at TIMESTAMPTZ, created_at TIMESTAMPTZ, id UUID, deleted_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE, view_archived_records BOOLEAN DEFAULT FALSE, manage_roles BOOLEAN DEFAULT FALSE, manage_users BOOLEAN DEFAULT FALSE, manage_zla_documents BOOLEAN DEFAULT FALSE, approve_holidays BOOLEAN DEFAULT FALSE, request_holidays BOOLEAN DEFAULT FALSE, submit_timesheets BOOLEAN DEFAULT FALSE, resolve_maintenance BOOLEAN DEFAULT FALSE, report_maintenance BOOLEAN DEFAULT FALSE, manage_incidents BOOLEAN DEFAULT FALSE, report_incidents BOOLEAN DEFAULT FALSE, manage_external_transfers BOOLEAN DEFAULT FALSE, log_internal_movements BOOLEAN DEFAULT FALSE, manage_quarantine BOOLEAN DEFAULT FALSE, administer_medications BOOLEAN DEFAULT FALSE, prescribe_medications BOOLEAN DEFAULT FALSE, add_clinical_notes BOOLEAN DEFAULT FALSE, log_daily_rounds BOOLEAN DEFAULT FALSE, manage_tasks BOOLEAN DEFAULT FALSE, complete_tasks BOOLEAN DEFAULT FALSE, edit_daily_logs BOOLEAN DEFAULT FALSE, create_daily_logs BOOLEAN DEFAULT FALSE, delete_animals BOOLEAN DEFAULT FALSE, archive_animals BOOLEAN DEFAULT FALSE, add_animals BOOLEAN DEFAULT FALSE, manage_access_control BOOLEAN DEFAULT FALSE, view_settings BOOLEAN DEFAULT FALSE, generate_reports BOOLEAN DEFAULT FALSE, view_missing_records BOOLEAN DEFAULT FALSE, view_holidays BOOLEAN DEFAULT FALSE, view_timesheets BOOLEAN DEFAULT FALSE, view_first_aid BOOLEAN DEFAULT FALSE, view_safety_drills BOOLEAN DEFAULT FALSE, view_maintenance BOOLEAN DEFAULT FALSE, view_incidents BOOLEAN DEFAULT FALSE, view_movements BOOLEAN DEFAULT FALSE, edit_medical BOOLEAN DEFAULT FALSE, view_medical BOOLEAN DEFAULT FALSE, view_daily_rounds BOOLEAN DEFAULT FALSE, view_tasks BOOLEAN DEFAULT FALSE, view_daily_logs BOOLEAN DEFAULT FALSE, edit_animals BOOLEAN DEFAULT FALSE, view_animals BOOLEAN DEFAULT FALSE, role TEXT NOT NULL, PRIMARY KEY (id));
-      CREATE TABLE IF NOT EXISTS users (id TEXT NOT NULL, _modified TIMESTAMPTZ, updated_at TIMESTAMPTZ, created_at TIMESTAMPTZ, deleted_at TIMESTAMPTZ, integrity_seal TEXT, is_deleted BOOLEAN DEFAULT FALSE, permissions JSONB, job_position TEXT, pin TEXT, email TEXT NOT NULL, initials TEXT NOT NULL, name TEXT, role TEXT, signature_data TEXT, PRIMARY KEY (id));
-      
-      -- Offline Sync Tracking
+      -- Animals & Dashboard
+      CREATE TABLE IF NOT EXISTS animals (id UUID PRIMARY KEY, name TEXT NOT NULL, species TEXT NOT NULL, category TEXT NOT NULL, sex TEXT, location TEXT NOT NULL, image_url TEXT, hazard_rating TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS archived_animals (id UUID PRIMARY KEY, name TEXT NOT NULL, species TEXT NOT NULL, category TEXT NOT NULL, archive_reason TEXT, archive_type TEXT, archived_at TIMESTAMPTZ, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS tasks (id UUID PRIMARY KEY, title TEXT NOT NULL, type TEXT, assigned_to TEXT, due_date TEXT NOT NULL, completed BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Husbandry
+      CREATE TABLE IF NOT EXISTS daily_logs (id UUID PRIMARY KEY, animal_id UUID, log_type TEXT, log_date TEXT, value TEXT, notes TEXT, user_initials TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS daily_rounds (id UUID PRIMARY KEY, section TEXT, shift TEXT, status TEXT, completed_by TEXT, completed_at TIMESTAMPTZ, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Medical
+      CREATE TABLE IF NOT EXISTS medical_records (id UUID PRIMARY KEY, animal_id UUID, diagnosis TEXT, treatment_plan TEXT, note_type TEXT, date TEXT, staff_initials TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS clinical_notes (id UUID PRIMARY KEY, animal_id UUID, type TEXT, notes TEXT, author TEXT, date TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS mar_charts (id UUID PRIMARY KEY, animal_id UUID, medication TEXT, dosage TEXT, frequency TEXT, start_date TEXT, end_date TEXT, status TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS quarantine_records (id UUID PRIMARY KEY, animal_id UUID, start_date TEXT, end_date TEXT, reason TEXT, status TEXT, staff_initials TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Safety & Facilities
+      CREATE TABLE IF NOT EXISTS incidents (id UUID PRIMARY KEY, type TEXT, severity TEXT, date TEXT, time TEXT, location TEXT, description TEXT, status TEXT, reported_by TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS first_aid_logs (id UUID PRIMARY KEY, date TEXT, time TEXT, type TEXT, person_name TEXT, location TEXT, description TEXT, treatment TEXT, outcome TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS maintenance_logs (id UUID PRIMARY KEY, task_type TEXT, enclosure_id UUID, description TEXT, status TEXT, date_logged TEXT, date_completed TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS safety_drills (id UUID PRIMARY KEY, title TEXT, location TEXT, date TEXT, status TEXT, description TEXT, priority TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Staff
+      CREATE TABLE IF NOT EXISTS timesheets (id UUID PRIMARY KEY, staff_name TEXT NOT NULL, date TEXT NOT NULL, clock_in TEXT NOT NULL, clock_out TEXT, total_hours TEXT, status TEXT NOT NULL, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS staff_rota (id UUID PRIMARY KEY, assigned_to TEXT, shift_type TEXT NOT NULL, date DATE NOT NULL, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS holidays (id UUID PRIMARY KEY, staff_name TEXT NOT NULL, leave_type TEXT, start_date TEXT, end_date TEXT, status TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Logistics
+      CREATE TABLE IF NOT EXISTS internal_movements (id UUID PRIMARY KEY, animal_id UUID, animal_name TEXT, movement_type TEXT, source_location TEXT, destination_location TEXT, log_date TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS external_transfers (id UUID PRIMARY KEY, animal_id UUID, animal_name TEXT, transfer_type TEXT, institution TEXT, date TEXT, transport_method TEXT, status TEXT, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+
+      -- Offline Sync Tracking Queue
       CREATE TABLE IF NOT EXISTS upload_queue (id UUID PRIMARY KEY, table_name TEXT, record_id UUID, operation TEXT, payload JSONB, created_at TIMESTAMPTZ, sync_attempts INTEGER DEFAULT 0);
+      
       COMMIT;
     `);
     console.log('✅ [Database] PGlite Full Parity Schema Established (Includes Auth).');

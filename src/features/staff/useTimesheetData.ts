@@ -25,7 +25,7 @@ export const useTimesheetData = (userId?: string) => {
       return await updateOfflineRecord('timesheets', id, updates);
     },
     deleteTimesheet: async (id: string) => {
-      await timesheetsCollection.delete(id);
+      return await updateOfflineRecord('timesheets', id, { is_deleted: true });
     }
   };
 };

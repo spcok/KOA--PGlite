@@ -78,6 +78,8 @@ export const useMedicalData = (animalId?: string) => {
     
     // For backward compatibility
     updateMedicalRecord: async (id: string, updates: any) => updateRecord(id, updates, 'medical_records'),
-    deleteMedicalRecord: async () => { console.warn('deleteMedicalRecord pending'); }
+    deleteRecord: async (id: string, table: 'medical_records' | 'clinical_notes' | 'mar_charts' | 'quarantine_records' = 'medical_records') => {
+      return await updateOfflineRecord(table, id, { is_deleted: true });
+    }
   };
 };

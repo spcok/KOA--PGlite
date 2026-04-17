@@ -27,14 +27,17 @@ export function useSyncEngine() {
       console.log('🔄 [Sync] Auth Verified. Hydrating Core & Auth Data...');
       
       try {
-        // Helper to safely fetch and insert data
+        // Strict helper to fetch and insert data
         const syncTable = async (tableName: string, insertQuery: string, mapRow: (row: any) => any[]) => {
-          // Some admin tables might not have is_deleted, so we fetch all if the filtered fetch fails
-          let { data, error: fetchError } = await supabase.from(tableName).select('*').eq('is_deleted', false);
+          // Strict fetch: only pull active records
+          const { data, error: fetchError } = await supabase
+            .from(tableName)
+            .select('*')
+            .eq('is_deleted', false);
+            
           if (fetchError) {
-            const fallback = await supabase.from(tableName).select('*');
-            data = fallback.data;
-            if (fallback.error) console.warn(`Skipping ${tableName}:`, fallback.error);
+            console.error(`🛑 [Sync] Fatal error fetching ${tableName}:`, fetchError);
+            throw fetchError; 
           }
           
           if (data && data.length > 0) {

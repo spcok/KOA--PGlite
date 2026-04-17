@@ -1,6 +1,7 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
 import { useMemo } from 'react';
 import { localDB } from '../../lib/pglite';
+import { updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?: string) => {
   // 1. Animals Query
@@ -99,6 +100,9 @@ export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?
     dailyLogs,
     isLoading: isEngineLoading,
     addLogEntry,
-    updateLogEntry
+    updateLogEntry,
+    deleteLogEntry: async (id: string) => {
+      return await updateOfflineRecord('daily_logs', id, { is_deleted: true });
+    }
   };
 };
