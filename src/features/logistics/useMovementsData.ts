@@ -1,5 +1,5 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
-import { movementsCollection } from '../../lib/database';
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useMovementsData = () => {
   const res = useLiveQuery(`SELECT * FROM animal_movements WHERE is_deleted = false ORDER BY date DESC;`);
@@ -10,7 +10,10 @@ export const useMovementsData = () => {
     isLoading: res === undefined,
     error: res?.error || null,
     addMovement: async (movement: any) => {
-      await movementsCollection.insert({ ...movement, id: movement.id || crypto.randomUUID(), isDeleted: false });
+        return await insertOfflineRecord('internal_movements', movement);
+    },
+    updateMovement: async (id: string, updates: any) => {
+        return await updateOfflineRecord('internal_movements', id, updates);
     }
   };
 };

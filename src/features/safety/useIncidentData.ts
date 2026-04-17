@@ -1,6 +1,5 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
-import { incidentsCollection } from '../../lib/database';
-import { Incident } from '../../types';
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useIncidentData = () => {
   const res = useLiveQuery(`SELECT * FROM incidents WHERE is_deleted = false ORDER BY date DESC;`);
@@ -13,11 +12,11 @@ export const useIncidentData = () => {
     logs: incidents,
     isLoading: res === undefined,
     error: res?.error || null,
-    addIncident: async (incident: Partial<Incident>) => {
-      await incidentsCollection.insert({ ...incident, id: incident.id || crypto.randomUUID(), isDeleted: false } as Incident);
+    addIncident: async (incident: any) => {
+        return await insertOfflineRecord('incidents', incident);
     },
-    updateIncident: async (id: string, updates: Partial<Incident>) => {
-      await incidentsCollection.update(id, updates);
+    updateIncident: async (id: string, updates: any) => {
+        return await updateOfflineRecord('incidents', id, updates);
     },
     deleteIncident: async (id: string) => {
       await incidentsCollection.delete(id);

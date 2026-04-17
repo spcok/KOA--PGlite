@@ -1,6 +1,5 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
-import { safetyDrillsCollection } from '../../lib/database';
-import { SafetyDrill } from '../../types';
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useSafetyDrillData = () => {
   const res = useLiveQuery(`SELECT * FROM safety_drills WHERE is_deleted = false ORDER BY date DESC;`);
@@ -14,14 +13,11 @@ export const useSafetyDrillData = () => {
     logs: drills,
     isLoading: res === undefined,
     error: res?.error || null,
-    addDrill: async (drill: Partial<SafetyDrill>) => {
-      await safetyDrillsCollection.insert({ ...drill, id: drill.id || crypto.randomUUID(), isDeleted: false } as SafetyDrill);
+    addSafetyDrill: async (drill: any) => {
+        return await insertOfflineRecord('safety_drills', drill);
     },
-    updateDrill: async (id: string, updates: Partial<SafetyDrill>) => {
-      await safetyDrillsCollection.update(id, updates);
-    },
-    deleteDrill: async (id: string) => {
-      await safetyDrillsCollection.delete(id);
+    updateSafetyDrill: async (id: string, updates: any) => {
+        return await updateOfflineRecord('safety_drills', id, updates);
     }
   };
 };

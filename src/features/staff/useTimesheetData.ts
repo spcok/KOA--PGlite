@@ -2,6 +2,8 @@ import { useLiveQuery } from '@electric-sql/pglite-react';
 import { timesheetsCollection } from '../../lib/database';
 import { Timesheet } from '../../types';
 
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
+
 export const useTimesheetData = (userId?: string) => {
   const query = userId 
     ? `SELECT * FROM timesheets WHERE user_id = $1 AND is_deleted = false ORDER BY date DESC;`
@@ -17,10 +19,10 @@ export const useTimesheetData = (userId?: string) => {
     
     // Mutations preserved for application functionality
     addTimesheet: async (entry: Partial<Timesheet>) => {
-      await timesheetsCollection.insert({ ...entry, id: entry.id || crypto.randomUUID(), isDeleted: false } as Timesheet);
+      return await insertOfflineRecord('timesheets', entry);
     },
     updateTimesheet: async (id: string, updates: Partial<Timesheet>) => {
-      await timesheetsCollection.update(id, updates);
+      return await updateOfflineRecord('timesheets', id, updates);
     },
     deleteTimesheet: async (id: string) => {
       await timesheetsCollection.delete(id);

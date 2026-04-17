@@ -1,5 +1,6 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
 import { useMemo } from 'react';
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useMedicalData = (animalId?: string) => {
   // 1. Fetch Medical Records
@@ -40,6 +41,27 @@ export const useMedicalData = (animalId?: string) => {
     }));
   }, [res?.rows, animalsRes?.rows]);
 
+  // --- OFFLINE MUTATIONS ---
+  const addMedicalRecord = async (record: any) => {
+    return await insertOfflineRecord('medical_records', record);
+  };
+
+  const addClinicalNote = async (note: any) => {
+    return await insertOfflineRecord('clinical_notes', note);
+  };
+
+  const addMarChart = async (chart: any) => {
+    return await insertOfflineRecord('mar_charts', chart);
+  };
+
+  const addQuarantineRecord = async (record: any) => {
+    return await insertOfflineRecord('quarantine_records', record);
+  };
+
+  const updateRecord = async (id: string, updates: any, table: 'medical_records' | 'clinical_notes' | 'mar_charts' | 'quarantine_records' = 'medical_records') => {
+    return await updateOfflineRecord(table, id, updates);
+  };
+
   return {
     data: clinicalNotes,          // Standard legacy alias
     medicalRecords: clinicalNotes, // Standard legacy alias
@@ -48,9 +70,14 @@ export const useMedicalData = (animalId?: string) => {
     isError: !!res?.error,
     error: res?.error || null,
     
-    // Mutation placeholders to prevent crash if component calls them
-    addMedicalRecord: async () => { console.warn('addMedicalRecord pending'); },
-    updateMedicalRecord: async () => { console.warn('updateMedicalRecord pending'); },
+    addMedicalRecord,
+    addClinicalNote,
+    addMarChart,
+    addQuarantineRecord,
+    updateRecord,
+    
+    // For backward compatibility
+    updateMedicalRecord: async (id: string, updates: any) => updateRecord(id, updates, 'medical_records'),
     deleteMedicalRecord: async () => { console.warn('deleteMedicalRecord pending'); }
   };
 };

@@ -1,5 +1,5 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
-import { transfersCollection } from '../../lib/database';
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useTransfersData = () => {
   const res = useLiveQuery(`SELECT * FROM animal_transfers WHERE is_deleted = false ORDER BY date DESC;`);
@@ -10,12 +10,13 @@ export const useTransfersData = () => {
     isLoading: res === undefined,
     error: res?.error || null,
     addTransfer: async (transfer: any) => {
-      await transfersCollection.insert({ ...transfer, id: transfer.id || crypto.randomUUID(), isDeleted: false });
+        return await insertOfflineRecord('external_transfers', transfer);
     },
-    updateTransfer: async (transfer: any) => {
-      await transfersCollection.update(transfer.id, transfer);
+    updateTransfer: async (id: string, updates: any) => {
+        return await updateOfflineRecord('external_transfers', id, updates);
     },
     deleteTransfer: async (id: string) => {
+      // Keep legacy for now as requested
       await transfersCollection.delete(id);
     }
   };

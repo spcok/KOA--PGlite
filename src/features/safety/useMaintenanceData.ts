@@ -1,7 +1,6 @@
 import { useLiveQuery } from '@electric-sql/pglite-react';
 import { useMemo } from 'react';
-import { maintenanceCollection } from '../../lib/database';
-import { MaintenanceLog } from '../../types';
+import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
 
 export const useMaintenanceData = () => {
   const res = useLiveQuery(`SELECT * FROM maintenance_logs WHERE is_deleted = false ORDER BY created_at DESC;`);
@@ -20,8 +19,11 @@ export const useMaintenanceData = () => {
     logs: logs, // Preserving alias
     isLoading: res === undefined,
     error: res?.error || null,
-    addMaintenanceLog: async (log: Partial<MaintenanceLog>) => { /* ... existing ... */ },
-    updateMaintenanceLog: async (id: string, updates: Partial<MaintenanceLog>) => { /* ... existing ... */ },
-    deleteMaintenanceLog: async (id: string) => { /* ... existing ... */ }
+    addMaintenanceLog: async (log: any) => {
+        return await insertOfflineRecord('maintenance_logs', log);
+    },
+    updateMaintenanceLog: async (id: string, updates: any) => {
+        return await updateOfflineRecord('maintenance_logs', id, updates);
+    }
   };
 };
