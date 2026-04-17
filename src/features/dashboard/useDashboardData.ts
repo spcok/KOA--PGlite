@@ -9,12 +9,18 @@ export const useDashboardData = () => {
   // Documentation Check: res is undefined during initialization
   const isLoading = animalsRes === undefined || tasksRes === undefined;
 
-  const stats = useMemo(() => ({
-    totalAnimals: animalsRes?.rows?.length ?? 0,
-    activeTasks: tasksRes?.rows?.length ?? 0,
-    medicalAlerts: 0, // Placeholder until sync is restored
-    openIncidents: 0
-  }), [animalsRes, tasksRes]);
+    const stats = useMemo(() => {
+        // GUARD ADDED HERE: Return empty stats if engine is still booting
+        if (animalsRes === undefined || tasksRes === undefined) {
+          return { totalAnimals: 0, activeTasks: 0, medicalAlerts: 0, openIncidents: 0 };
+        }
+        return {
+          totalAnimals: animalsRes?.rows?.length ?? 0,
+          activeTasks: tasksRes?.rows?.length ?? 0,
+          medicalAlerts: 0, // Placeholder until sync is restored
+          openIncidents: 0
+        };
+      }, [animalsRes, tasksRes]);
 
   return { stats, isLoading, isError: false };
 };
