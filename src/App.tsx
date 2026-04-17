@@ -9,6 +9,7 @@ import { useAuthStore } from './store/authStore';
 import { router } from './router';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useSupabaseRealtime } from './hooks/useSupabaseRealtime';
+import { processUploadQueue } from './services/uploadService';
 
 function Loader() {
   return <div className="p-8 text-center text-slate-500">Loading...</div>;
@@ -51,6 +52,23 @@ export default function App() {
       setIsHydrated(true);
     });
   }, [initialize]);
+
+  // Background Sync Service
+  useEffect(() => {
+    // Run immediately on boot
+    processUploadQueue();
+    
+    // Run every 30 seconds
+    const interval = setInterval(processUploadQueue, 30000); 
+    
+    // Run instantly if the browser goes from offline to online
+    window.addEventListener('online', processUploadQueue);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', processUploadQueue);
+    };
+  }, []);
 
   if (!isHydrated) return null; 
 
