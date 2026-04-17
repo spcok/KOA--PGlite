@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { localDB } from '../../lib/pglite';
 import { Outlet, useLocation, Link } from '@tanstack/react-router';
 import { LayoutContext } from './LayoutContext';
 import { useAuthStore } from '../../store/authStore';
@@ -94,6 +95,30 @@ export default function Layout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isA11yOpen, setIsA11yOpen] = useState(false);
+
+  const runRawDiagnostic = async () => {
+    try {
+      console.log("🔍 Running Raw PGlite Diagnostics...");
+      
+      const animalRes = await localDB.query('SELECT count(*) FROM animals');
+      const taskRes = await localDB.query('SELECT count(*) FROM tasks');
+      const queueRes = await localDB.query('SELECT count(*) FROM upload_queue');
+      const auditRes = await localDB.query('SELECT is_deleted, count(*) FROM animals GROUP BY is_deleted');
+      const dashQueryRes = await localDB.query('SELECT id FROM animals WHERE is_deleted = false OR is_deleted IS NULL');
+      
+      console.log("📊 RAW DATABASE COUNTS:");
+      console.log("Animals:", animalRes.rows[0]);
+      console.log("Tasks:", taskRes.rows[0]);
+      console.log("Queue:", queueRes.rows[0]);
+      console.log("🔍 SCHEMA VALUE AUDIT:", auditRes.rows);
+      console.log("🔍 DASHBOARD QUERY RESULT COUNT:", dashQueryRes.rows.length);
+      
+      alert(`Raw DB Check Success! Check your console for the Audit.`);
+    } catch (e: any) {
+      console.error("❌ RAW DB FAILED:", e);
+      alert(`DB Check Failed: ${e.message}`);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50">
@@ -203,6 +228,9 @@ export default function Layout() {
             >
               <LogOut size={20} className={isSidebarCollapsed ? '' : 'mr-3'} />
               {!isSidebarCollapsed && <span>Logout</span>}
+            </button>
+            <button onClick={runRawDiagnostic} style={{ background: 'red', color: 'white', padding: '10px', marginTop: '10px', width: '100%', borderRadius: '4px' }}>
+              TEST LOCAL DB
             </button>
           </div>
         </aside>
