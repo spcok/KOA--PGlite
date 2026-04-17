@@ -25,7 +25,28 @@ export const initLocalSchema = async () => {
       CREATE TABLE IF NOT EXISTS tasks (id UUID PRIMARY KEY, title TEXT NOT NULL, type TEXT, assigned_to TEXT, due_date TEXT NOT NULL, completed BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
 
       -- Husbandry
-      CREATE TABLE IF NOT EXISTS daily_logs (id UUID PRIMARY KEY, animal_id UUID, log_type TEXT, log_date TEXT, value TEXT, notes TEXT, user_initials TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
+      CREATE TABLE IF NOT EXISTS daily_logs (
+        id UUID PRIMARY KEY, 
+        animal_id UUID, 
+        log_type TEXT, 
+        log_date TEXT, 
+        value TEXT, 
+        notes TEXT, 
+        user_initials TEXT, 
+        weight_grams NUMERIC, 
+        weight NUMERIC, 
+        weight_unit TEXT, 
+        health_record_type TEXT, 
+        basking_temp_c NUMERIC, 
+        cool_temp_c NUMERIC, 
+        temperature_c NUMERIC, 
+        created_by TEXT, 
+        integrity_seal TEXT, 
+        created_at TIMESTAMPTZ, 
+        updated_at TIMESTAMPTZ, 
+        _modified TIMESTAMPTZ, 
+        is_deleted BOOLEAN DEFAULT FALSE
+      );
       CREATE TABLE IF NOT EXISTS daily_rounds (id UUID PRIMARY KEY, section TEXT, shift TEXT, status TEXT, completed_by TEXT, completed_at TIMESTAMPTZ, notes TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN DEFAULT FALSE);
 
       -- Medical
