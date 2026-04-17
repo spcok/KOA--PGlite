@@ -24,7 +24,8 @@ export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?
   
   // 3. Snake_Case Bridge
   const dailyLogs = useMemo(() => {
-    return (logsRes?.rows || []).map((log: any) => ({
+    if (!logsRes?.rows) return []; // Guard against initialization phase
+    return logsRes.rows.map((log: any) => ({
       ...log,
       animalId: log.animal_id,
       logType: log.log_type,
@@ -34,7 +35,8 @@ export const useDailyLogData = (viewDate?: string, activeTab?: string, animalId?
   }, [logsRes?.rows]);
 
   const animals = useMemo(() => {
-    const raw = animalsRes?.rows || [];
+    if (!animalsRes?.rows) return []; // Guard against initialization phase
+    const raw = animalsRes.rows;
     if (!activeTab || activeTab === 'all') {
       return raw.map((a: any) => ({ ...a, imageUrl: a.image_url }));
     }
