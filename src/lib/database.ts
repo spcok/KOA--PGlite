@@ -126,7 +126,7 @@ export const directoryCollection = createFailoverCollection<DirectoryEntry>('dir
 export const dailyLogsCollection = createFailoverCollection<LogEntry>('daily_logs', { hasSoftDelete: true, dateFilterColumn: 'log_date' });
 export const dailyRoundsCollection = createFailoverCollection<DailyRound>('daily_rounds', { hasSoftDelete: true, dateFilterColumn: 'date' });
 export const tasksCollection = createFailoverCollection<Task>('tasks', { hasSoftDelete: true, dateFilterColumn: 'due_date' });
-export const medicalRecordsCollection = createFailoverCollection<ClinicalNote>('medical_records', { hasSoftDelete: true, dateFilterColumn: 'date' });
+export const medicalLogsCollection = createFailoverCollection<ClinicalNote>('medical_logs', { hasSoftDelete: true, dateFilterColumn: 'date' });
 export const marChartsCollection = createFailoverCollection<MARChart>('mar_charts');
 export const quarantineRecordsCollection = createFailoverCollection<QuarantineRecord>('quarantine_records');
 

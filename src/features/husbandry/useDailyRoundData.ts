@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { AnimalCategory, DailyRound, LogType } from '../../types';
-import { useLiveQuery } from '@electric-sql/pglite-react';
+import { useLiveQuery } from '@tanstack/react-db';
 import { animalsCollection, dailyLogsCollection, dailyRoundsCollection } from '../../lib/database';
 
 interface AnimalCheckState {
@@ -13,16 +13,16 @@ interface AnimalCheckState {
 
 export function useDailyRoundData(viewDate: string) {
     // 1. REACTIVE UI with Official Selectors & Safe Arrays
-    const resAnimals = useLiveQuery(`SELECT * FROM animals;`);
-    const allAnimals = resAnimals?.rows || [];
+    const { data: rawAnimals, isLoading: isLoadingAnimals } = useLiveQuery((q) => q.from({ item: animalsCollection }));
+    const allAnimals = Array.isArray(rawAnimals) ? rawAnimals : [];
 
-    const resLogs = useLiveQuery(`SELECT * FROM daily_logs;`);
-    const liveLogs = resLogs?.rows || [];
+    const { data: rawLogs, isLoading: isLoadingLogs } = useLiveQuery((q) => q.from({ item: dailyLogsCollection }));
+    const liveLogs = Array.isArray(rawLogs) ? rawLogs : [];
 
-    const resRounds = useLiveQuery(`SELECT * FROM daily_rounds WHERE date = $1 ORDER BY created_at DESC;`, [viewDate]);
-    const liveRounds = resRounds?.rows || [];
+    const { data: rawRounds, isLoading: isLoadingRounds } = useLiveQuery((q) => q.from({ item: dailyRoundsCollection }));
+    const liveRounds = Array.isArray(rawRounds) ? rawRounds : [];
     
-    const isLoading = resAnimals === undefined || resLogs === undefined || resRounds === undefined;
+    const isLoading = isLoadingAnimals || isLoadingLogs || isLoadingRounds;
 
     const [roundType, setRoundType] = useState<'Morning' | 'Evening'>('Morning');
     const [activeTab, setActiveTab] = useState<AnimalCategory>(AnimalCategory.OWLS);

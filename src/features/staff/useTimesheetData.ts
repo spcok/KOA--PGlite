@@ -1,31 +1,35 @@
-import { useLiveQuery } from '@electric-sql/pglite-react';
+import { useLiveQuery } from '@tanstack/react-db';
 import { timesheetsCollection } from '../../lib/database';
 import { Timesheet } from '../../types';
 
-import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
+export const useTimesheetData = (staffName?: string) => {
+  const { data, isLoading } = useLiveQuery((q) => 
+    q.from({ item: timesheetsCollection })
+  );
 
-export const useTimesheetData = (userId?: string) => {
-  const query = userId 
-    ? `SELECT * FROM timesheets WHERE user_id = $1 AND is_deleted = false ORDER BY date DESC;`
-    : `SELECT * FROM timesheets WHERE is_deleted = false ORDER BY date DESC;`;
-  const params = userId ? [userId] : [];
-  const res = useLiveQuery(query, params);
+  const safeData = Array.isArray(data) ? data : [];
+  
+  const activeTimesheets = safeData.filter((t: Timesheet) => {
+    if (!t || t.isDeleted) return false;
+    if (staffName && t.staffName !== staffName) return false;
+    return true;
+  });
 
   return {
-    data: res?.rows || [],
-    timesheets: res?.rows || [],
-    isLoading: res === undefined,
-    error: res?.error || null,
+    // Aliases to prevent destructuring crashes
+    timesheets: activeTimesheets,
+    logs: activeTimesheets,
+    data: activeTimesheets,
     
-    // Mutations preserved for application functionality
+    isLoading,
     addTimesheet: async (entry: Partial<Timesheet>) => {
-      return await insertOfflineRecord('timesheets', entry);
+      await timesheetsCollection.insert({ ...entry, id: entry.id || crypto.randomUUID(), isDeleted: false } as Timesheet);
     },
     updateTimesheet: async (id: string, updates: Partial<Timesheet>) => {
-      return await updateOfflineRecord('timesheets', id, updates);
+      await timesheetsCollection.update(id, updates);
     },
     deleteTimesheet: async (id: string) => {
-      return await updateOfflineRecord('timesheets', id, { is_deleted: true });
+      await timesheetsCollection.delete(id);
     }
   };
 };

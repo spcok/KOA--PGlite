@@ -1,23 +1,14 @@
-import { useLiveQuery } from '@electric-sql/pglite-react';
-import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
+import { useLiveQuery } from '@tanstack/react-db';
+import { transfersCollection } from '../../lib/database';
 
 export const useTransfersData = () => {
-  const res = useLiveQuery(`SELECT * FROM animal_transfers WHERE is_deleted = false ORDER BY date DESC;`);
+  const { data: transfers = [], isLoading } = useLiveQuery((q) => q.from({ item: transfersCollection }));
 
   return {
-    data: res?.rows || [],
-    transfers: res?.rows || [],
-    isLoading: res === undefined,
-    error: res?.error || null,
-    addTransfer: async (transfer: any) => {
-        return await insertOfflineRecord('external_transfers', transfer);
-    },
-    updateTransfer: async (id: string, updates: any) => {
-        return await updateOfflineRecord('external_transfers', id, updates);
-    },
-    deleteTransfer: async (id: string) => {
-      // Keep legacy for now as requested
-      await transfersCollection.delete(id);
-    }
+    transfers: transfers.filter((t: any) => !t.isDeleted),
+    isLoading,
+    addTransfer: async (transfer: any) => transfersCollection.insert({ ...transfer, id: crypto.randomUUID(), isDeleted: false }),
+    updateTransfer: async (transfer: any) => transfersCollection.update(transfer.id, transfer),
+    deleteTransfer: async (id: string) => transfersCollection.delete(id),
   };
 };

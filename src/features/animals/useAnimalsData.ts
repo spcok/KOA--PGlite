@@ -1,18 +1,17 @@
-import { useLiveQuery } from '@electric-sql/pglite-react';
+import { useLiveQuery } from '@tanstack/react-db';
 import { animalsCollection } from '../../lib/database';
 import { Animal } from '../../types';
 
 export const useAnimalsData = () => {
-  const res = useLiveQuery(`SELECT * FROM animals WHERE is_deleted = false ORDER BY name ASC;`);
-  
-  const animals = (res?.rows || []).filter((animal: any) => !animal.is_deleted && !animal.archived);
+  const { data: animals = [], isLoading } = useLiveQuery((q) => 
+    q.from({ item: animalsCollection })
+  );
 
-  return {
-    data: res?.rows || [],
-    animals: animals,
-    isLoading: res === undefined,
-    isError: !!res?.error,
-    error: res?.error || null,
+  const filteredAnimals = animals.filter((animal: Animal) => !animal.isDeleted && !animal.archived);
+
+  return { 
+    animals: filteredAnimals, 
+    isLoading,
     addAnimal: async (animal: Omit<Animal, 'id'>) => {
       await animalsCollection.insert({ ...animal, id: crypto.randomUUID(), isDeleted: false });
     },

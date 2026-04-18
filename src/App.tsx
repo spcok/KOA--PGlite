@@ -1,7 +1,4 @@
-import { useEffect, useState, Suspense } from 'react';
-import { PGliteProvider } from '@electric-sql/pglite-react';
-import { localDB } from './lib/pglite';
-import { useSyncEngine } from './hooks/useSyncEngine';
+import { useEffect, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { queryClient } from './lib/queryClient';
@@ -9,11 +6,6 @@ import { useAuthStore } from './store/authStore';
 import { router } from './router';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useSupabaseRealtime } from './hooks/useSupabaseRealtime';
-import { processUploadQueue } from './services/uploadService';
-
-function Loader() {
-  return <div className="p-8 text-center text-slate-500">Loading...</div>;
-}
 
 // 1. THE OS EVICTION LOCK
 function useStoragePersistence() {
@@ -40,7 +32,6 @@ function GlobalHooks() {
 }
 
 export default function App() {
-  useSyncEngine(); // Mount the silent engine
   const initialize = useAuthStore(state => state.initialize);
   const currentUser = useAuthStore(state => state.currentUser);
 
@@ -53,23 +44,6 @@ export default function App() {
     });
   }, [initialize]);
 
-  // Background Sync Service
-  useEffect(() => {
-    // Run immediately on boot
-    processUploadQueue();
-    
-    // Run every 30 seconds
-    const interval = setInterval(processUploadQueue, 30000); 
-    
-    // Run instantly if the browser goes from offline to online
-    window.addEventListener('online', processUploadQueue);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('online', processUploadQueue);
-    };
-  }, []);
-
   if (!isHydrated) return null; 
 
   const authContext = {
@@ -80,12 +54,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <PGliteProvider db={localDB}>
-          <GlobalHooks />
-          <Suspense fallback={<Loader />}>
-            <RouterProvider router={router} context={{ auth: authContext }} />
-          </Suspense>
-        </PGliteProvider>
+        <GlobalHooks />
+        <RouterProvider router={router} context={{ auth: authContext }} />
       </QueryClientProvider>
     </ErrorBoundary>
   );

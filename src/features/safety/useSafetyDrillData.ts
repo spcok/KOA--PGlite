@@ -1,23 +1,31 @@
-import { useLiveQuery } from '@electric-sql/pglite-react';
-import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
+import { useLiveQuery } from '@tanstack/react-db';
+import { safetyDrillsCollection } from '../../lib/database';
+import { SafetyDrill } from '../../types';
 
 export const useSafetyDrillData = () => {
-  const res = useLiveQuery(`SELECT * FROM safety_drills WHERE is_deleted = false ORDER BY date DESC;`);
-  
-  const drills = res?.rows || [];
+  const { data, isLoading } = useLiveQuery((q) => 
+    q.from({ item: safetyDrillsCollection })
+  );
+
+  const safeData = Array.isArray(data) ? data : [];
+  const activeDrills = safeData.filter((d: SafetyDrill) => d && !d.isDeleted);
 
   return {
-    data: drills,
-    drills,
-    safetyDrills: drills,
-    logs: drills,
-    isLoading: res === undefined,
-    error: res?.error || null,
-    addSafetyDrill: async (drill: any) => {
-        return await insertOfflineRecord('safety_drills', drill);
+    // Aliases
+    drills: activeDrills,
+    safetyDrills: activeDrills,
+    logs: activeDrills,
+    data: activeDrills,
+    
+    isLoading,
+    addDrill: async (drill: Partial<SafetyDrill>) => {
+      await safetyDrillsCollection.insert({ ...drill, id: drill.id || crypto.randomUUID(), isDeleted: false } as SafetyDrill);
     },
-    updateSafetyDrill: async (id: string, updates: any) => {
-        return await updateOfflineRecord('safety_drills', id, updates);
+    updateDrill: async (id: string, updates: Partial<SafetyDrill>) => {
+      await safetyDrillsCollection.update(id, updates);
+    },
+    deleteDrill: async (id: string) => {
+      await safetyDrillsCollection.delete(id);
     }
   };
 };

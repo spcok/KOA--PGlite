@@ -1,16 +1,16 @@
-import { useLiveQuery } from '@electric-sql/pglite-react';
-import { Task } from '../../types';
+import { useLiveQuery } from '@tanstack/react-db';
 import { tasksCollection } from '../../lib/database';
+import { Task } from '../../types';
 
 export const useTaskData = () => {
-  const res = useLiveQuery(`SELECT * FROM tasks ORDER BY due_date ASC;`);
+  // NATIVE SELECTOR: Handshake complete.
+  const { data: tasks = [], isLoading } = useLiveQuery((q) => 
+    q.from({ item: tasksCollection })
+  );
 
   return { 
-    data: res?.rows || [],
-    tasks: (res?.rows || []).filter((t: any) => !t.is_deleted), 
-    isLoading: res === undefined,
-    isError: !!res?.error,
-    error: res?.error || null,
+    tasks: tasks.filter((t: Task) => !t.isDeleted), 
+    isLoading, 
     addTask: async (newTask: Partial<Task>) => {
       const task = { ...newTask, id: newTask.id || crypto.randomUUID(), isDeleted: false };
       await tasksCollection.insert(task);

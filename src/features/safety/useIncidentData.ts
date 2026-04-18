@@ -1,25 +1,30 @@
-import { useLiveQuery } from '@electric-sql/pglite-react';
-import { insertOfflineRecord, updateOfflineRecord } from '../../lib/offlineMutations';
+import { useLiveQuery } from '@tanstack/react-db';
+import { incidentsCollection } from '../../lib/database';
+import { Incident } from '../../types';
 
 export const useIncidentData = () => {
-  const res = useLiveQuery(`SELECT * FROM incidents WHERE is_deleted = false ORDER BY date DESC;`);
+  const { data, isLoading } = useLiveQuery((q) => 
+    q.from({ item: incidentsCollection })
+  );
 
-  const incidents = res?.rows || [];
+  const safeData = Array.isArray(data) ? data : [];
+  const activeIncidents = safeData.filter((i: Incident) => i && !i.isDeleted);
 
   return {
-    data: incidents,
-    incidents,
-    logs: incidents,
-    isLoading: res === undefined,
-    error: res?.error || null,
-    addIncident: async (incident: any) => {
-        return await insertOfflineRecord('incidents', incident);
+    // Aliases
+    incidents: activeIncidents,
+    logs: activeIncidents,
+    data: activeIncidents,
+    
+    isLoading,
+    addIncident: async (incident: Partial<Incident>) => {
+      await incidentsCollection.insert({ ...incident, id: incident.id || crypto.randomUUID(), isDeleted: false } as Incident);
     },
-    updateIncident: async (id: string, updates: any) => {
-        return await updateOfflineRecord('incidents', id, updates);
+    updateIncident: async (id: string, updates: Partial<Incident>) => {
+      await incidentsCollection.update(id, updates);
     },
     deleteIncident: async (id: string) => {
-        return await updateOfflineRecord('incidents', id, { is_deleted: true });
+      await incidentsCollection.delete(id);
     }
   };
 };
